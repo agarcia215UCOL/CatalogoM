@@ -1,0 +1,63 @@
+﻿@page "/marcas/nueva"
+@page "/marcas/editar/{Id:int}"
+@rendermode InteractiveServer
+
+@inject NavigationManager _navigator
+@inject IRepositorioMarca _repositorio
+
+<h3>@_mensaje Marca</h3>
+
+<EditForm Model="_marca" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="row mb-3">
+        <label for="txtNombre" class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="_marca.Nombre" />
+            <ValidationMessage For="() => _marca.Nombre" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button class="btn btn-secondary ms-3" @onclick="Cancelar" @onclick:preventDefault>Cancelar</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Marca _marca = new();
+    private string _mensaje = "Nueva";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id > 0)
+        {
+            var dbMarca = await _repositorio.Get(Id);
+            if (dbMarca != null)
+            {
+                _marca = dbMarca;
+                _mensaje = "Editar";
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id > 0)
+        {
+            await _repositorio.Update(Id, _marca);
+        }
+        else
+        {
+            await _repositorio.Add(_marca);
+        }
+
+        Cancelar();
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/marcas");
+    }
+}

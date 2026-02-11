@@ -1,0 +1,62 @@
+﻿@page "/clasificaciones/nueva"
+@page "/clasificaciones/editar/{Id:int}"
+@rendermode InteractiveServer
+
+@inject NavigationManager _navigator
+@inject IRepositorioClasificaciones _repositorio
+
+<h3>@_mensaje Clasificación</h3>
+
+<EditForm Model="_clasificacion" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="row mb-3">
+        <label for="txtNombre" class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="_clasificacion.Nombre" />
+            <ValidationMessage For="() => _clasificacion.Nombre" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button class="btn btn-secondary ms-3" @onclick="Cancelar" @onclick:preventDefault>Cancelar</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Clasificacion _clasificacion = new();
+    private string _mensaje = "Nueva";
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id > 0)
+        {
+            var dbClasificacion = await _repositorio.Get(Id);
+            if (dbClasificacion != null)
+            {
+                _clasificacion = dbClasificacion;
+                _mensaje = "Editar";
+            }
+        }
+    }
+
+    private async Task Guardar()
+    {
+        if (Id > 0)
+        {
+            await _repositorio.Update(Id, _clasificacion);
+        }
+        else
+        {
+            await _repositorio.Add(_clasificacion);
+        }
+
+        Cancelar();
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/clasificaciones");
+    }
+}

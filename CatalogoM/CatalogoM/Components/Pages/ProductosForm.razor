@@ -1,0 +1,127 @@
+﻿@page "/productos/nueva"
+@page "/productos/editar/{Id:int}"
+@rendermode InteractiveServer
+@inject NavigationManager _navigator;
+@inject IRepositorioProductos _repositorio;
+@inject IRepositorioClasificaciones _repoClasificaciones;
+<h2>@_mensaje Producto</h2>
+<EditForm Model="_producto" FormName="frmProducto" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <div class="row mb-3">
+        <label for="txtNombre" class="col-2 col-form-label">Nombre</label>
+        <div class="col-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="_producto.Nombre" />
+            <ValidationMessage For="() => _producto.Nombre" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtTipo" class="col-2 col-form-label">Tipo</label>
+        <div class="col-10">
+            <InputText id="txtTipo" class="form-control" @bind-Value="_producto.Tipo" />
+            <ValidationMessage For="() => _producto.Tipo" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtDepartamento" class="col-2 col-form-label">Sucursal</label>
+        <div class="col-10">
+            <InputText id="txtDepartamento" class="form-control" @bind-Value="_producto.Departamento" />
+            <ValidationMessage For="() => _producto.Departamento" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtPrecio" class="col-2 col-form-label">Precio</label>
+        
+        <div class="col-10">
+            <input id="txtPrecio" class="form-control" @bind="_producto.Precio" />
+            <ValidationMessage For="() => _producto.Precio" />
+        </div> 
+    </div>
+    <div class="row mb-3">
+        <label for="txtClasificacion" class="col-2 col-form-label">Clasificacion</label>
+        <div class="col-10">
+            <InputSelect class="form-select" @bind-Value="_producto.ClasificacionId">
+                <option value="0" enabled="enabled">Seleccione clasificación</option>
+                @foreach(Clasificacion clasificacion in _clasificaciones)
+                {
+                    <option value="@clasificacion.Id">@clasificacion.Nombre</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => _producto.ClasificacionId" />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label for="txtmarca" class="col-2 col-form-label">Marca</label>
+        <div class="col-10">
+            <select class="form-select" multiple size="3" @bind="_marcasSeleccionadas">
+                @foreach (Marca marca in _marcas)
+                {
+                    <option value="@marca.Id">@marca.Nombre</option>
+                }
+            </select>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <button class="btn btn-danger ms-3" @onclick="Cancelar" @onclick:preventDefault>Cancelar</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private string _mensaje = "";
+    private Producto? _producto = new();
+    private List<Clasificacion> _clasificaciones = new();
+    private List<Marca> _marcas = new();
+    private int[] _marcasSeleccionadas = Array.Empty<int>();
+
+    protected override async Task OnInitializedAsync()
+
+    {
+        _clasificaciones = await _repoClasificaciones.GetAll();
+        _marcas = await _repositorio.GetMarcas();
+        if (Id > 0)
+        {
+            _producto = await _repositorio.Get(Id);
+            if(_producto.Marcas.Count != 0)
+            {
+                _marcasSeleccionadas = _producto.Marcas.Select(i => i.Id).ToArray();
+            }
+            _mensaje = "Modificar";
+        }
+        else
+        {
+            _mensaje = "Nuevo";
+        }
+    }
+
+    private async void Guardar()
+    {
+        if (_marcasSeleccionadas.Count()>0)
+        {
+            List<Marca> marcas = new();
+            foreach (int idMarca in _marcasSeleccionadas)
+            {
+                marcas.Add(_marcas.First(r => r.Id == idMarca));
+            }
+            _producto.Marcas = marcas;
+        }
+        else
+        {
+            _producto.Marcas = null;
+        }
+        if (Id > 0)
+        {
+            await _repositorio.Update(Id, _producto!);
+        }
+        else
+        {
+            await _repositorio.Add(_producto!);
+        }
+        Cancelar();
+    }
+
+    private void Cancelar()
+    {
+        _navigator.NavigateTo("/productos");
+    }
+}
+   
